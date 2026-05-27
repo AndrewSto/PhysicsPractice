@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutor Fisica - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* ── DARK (default) ── */
+        :root {
+            --bg: #0a0e1a;
+            --card: #111827;
+            --border: rgba(255,255,255,0.07);
+            --border-soft: rgba(255,255,255,0.04);
+            --text: #e8eaf0;
+            --muted: #64748b;
+            --muted-light: #94a3b8;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --gold: #fbbf24;
+            --gold-bg: rgba(245,158,11,0.1);
+            --gold-border: rgba(245,158,11,0.2);
+            --green: #34d399;
+            --red: #f87171;
+            --score-bg: rgba(37,99,235,0.12);
+            --score-border: rgba(37,99,235,0.2);
+            --score-text: #60a5fa;
+            --topbar-bg: rgba(10,14,26,0.92);
+            --btn-outline-bg: rgba(255,255,255,0.04);
+            --btn-outline-hover: rgba(255,255,255,0.08);
+            --btn-outline-border: rgba(255,255,255,0.1);
+            --btn-outline-text: #cbd5e1;
+            --chart-grid: rgba(255,255,255,0.05);
+            --chart-omesse: rgba(51,65,85,0.8);
+            --chart-text: #64748b;
+            --modal-bg: #131c2e;
+            --input-bg: rgba(255,255,255,0.04);
+            --hero-title: #f1f5f9;
+            --hero-strong: #ffffff;
+            --empty-title: #94a3b8;
+            --section-badge-bg: rgba(255,255,255,0.02);
+            --exit-bg: rgba(239,68,68,0.06);
+            --exit-border: rgba(239,68,68,0.25);
+            --exit-text: #f87171;
+        }
+
+        /* ── LIGHT ── */
+        [data-theme="light"] {
+            --bg: #f4f6fb;
+            --card: #ffffff;
+            --border: rgba(0,0,0,0.08);
+            --border-soft: rgba(0,0,0,0.05);
+            --text: #0f172a;
+            --muted: #94a3b8;
+            --muted-light: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --gold: #d97706;
+            --gold-bg: rgba(245,158,11,0.08);
+            --gold-border: rgba(245,158,11,0.25);
+            --green: #059669;
+            --red: #dc2626;
+            --score-bg: rgba(37,99,235,0.08);
+            --score-border: rgba(37,99,235,0.2);
+            --score-text: #1d4ed8;
+            --topbar-bg: rgba(244,246,251,0.92);
+            --btn-outline-bg: #ffffff;
+            --btn-outline-hover: #f1f5f9;
+            --btn-outline-border: rgba(0,0,0,0.12);
+            --btn-outline-text: #334155;
+            --chart-grid: rgba(0,0,0,0.06);
+            --chart-omesse: rgba(203,213,225,0.9);
+            --chart-text: #94a3b8;
+            --modal-bg: #ffffff;
+            --input-bg: #f8fafc;
+            --hero-title: #0f172a;
+            --hero-strong: #000000;
+            --empty-title: #64748b;
+            --section-badge-bg: rgba(0,0,0,0.02);
+            --exit-bg: rgba(239,68,68,0.05);
+            --exit-border: rgba(239,68,68,0.2);
+            --exit-text: #dc2626;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+            transition: background .3s, color .3s;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 32px;
+            border-bottom: 1px solid var(--border-soft);
+            position: sticky;
+            top: 0;
+            background: var(--topbar-bg);
+            backdrop-filter: blur(12px);
+            z-index: 100;
+            transition: background .3s, border-color .3s;
+        }
+        .topbar-greeting { font-size: 13px; color: var(--muted); font-weight: 400; }
+        .topbar-greeting span { color: var(--muted-light); font-weight: 500; }
+        .topbar-right { display: flex; gap: 8px; align-items: center; }
+
+        .pill-btn {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--btn-outline-border);
+            background: var(--btn-outline-bg);
+            color: var(--muted-light);
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .pill-btn:hover { background: var(--btn-outline-hover); }
+        .pill-btn.danger {
+            border-color: var(--exit-border);
+            background: var(--exit-bg);
+            color: var(--exit-text);
+        }
+        .pill-btn.danger:hover { opacity: 0.8; }
+
+        /* ── HERO ── */
+        .hero {
+            padding: 48px 32px 40px;
+            border-bottom: 1px solid var(--border-soft);
+            transition: border-color .3s;
+        }
+        .hero-inner { max-width: 960px; margin: 0 auto; }
+        .hero-eyebrow {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 14px;
+            transition: color .3s;
+        }
+        .hero-title {
+            font-size: 42px;
+            font-weight: 300;
+            letter-spacing: -2px;
+            color: var(--hero-title);
+            line-height: 1.05;
+            margin-bottom: 32px;
+            transition: color .3s;
+        }
+        .hero-title strong { font-weight: 600; color: var(--hero-strong); }
+
+        /* ── BUTTONS ── */
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .action-btn {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 11px 22px;
+            border-radius: 10px;
+            border: 1px solid var(--btn-outline-border);
+            background: var(--btn-outline-bg);
+            color: var(--btn-outline-text);
+            cursor: pointer;
+            transition: all .2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .action-btn:hover { background: var(--btn-outline-hover); transform: translateY(-1px); }
+        .action-btn.gold { background: var(--gold-bg); color: var(--gold); border-color: var(--gold-border); }
+        .action-btn.gold:hover { opacity: 0.85; }
+        .action-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary-hover); }
+        .action-btn.primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(37,99,235,0.25); }
+
+        /* ── BODY ── */
+        .body { padding: 36px 32px; max-width: 960px; margin: 0 auto; }
+
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .section-title {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: color .3s;
+        }
+        .section-badge {
+            font-size: 11px;
+            color: var(--muted);
+            border: 1px solid var(--border);
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: var(--section-badge-bg);
+            transition: all .3s;
+        }
+
+        /* ── CARD ── */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+            transition: background .3s, border-color .3s;
+        }
+
+        /* ── CHART ── */
+        .chart-wrap { height: 280px; width: 100%; }
+
+        /* ── TABLE ── */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        thead th {
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--muted);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0 8px 14px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+            transition: color .3s, border-color .3s;
+        }
+        thead th:first-child { padding-left: 0; }
+        thead th:last-child { padding-right: 0; }
+        tbody td {
+            padding: 15px 8px;
+            border-bottom: 1px solid var(--border-soft);
+            font-size: 13px;
+            color: var(--muted-light);
+            vertical-align: middle;
+            transition: color .3s, border-color .3s;
+        }
+        tbody td:first-child { padding-left: 0; }
+        tbody td:last-child { padding-right: 0; }
+        tbody tr:last-child td { border-bottom: none; }
+
+        .score-badge {
+            display: inline-block;
+            background: var(--score-bg);
+            color: var(--score-text);
+            font-weight: 600;
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 7px;
+            border: 1px solid var(--score-border);
+            white-space: nowrap;
+            transition: all .3s;
+        }
+        .cell-green { color: var(--green); font-weight: 600; }
+        .cell-red { color: var(--red); font-weight: 600; }
+        .cell-muted { color: var(--muted); font-weight: 600; }
+
+        .open-btn {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 5px 12px;
+            border-radius: 7px;
+            border: 1px solid var(--score-border);
+            background: var(--score-bg);
+            color: var(--score-text);
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all .2s;
+        }
+        .open-btn:hover { opacity: 0.75; }
+
+        /* ── EMPTY ── */
+        .empty { text-align: center; padding: 48px 0; }
+        .empty-icon { font-size: 36px; margin-bottom: 14px; }
+        .empty-title { font-size: 15px; font-weight: 500; color: var(--empty-title); margin-bottom: 6px; }
+        .empty-sub { font-size: 13px; color: var(--muted); }
+
+        /* ── MODAL ── */
+        .modal-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: var(--modal-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            width: 100%;
+            max-width: 420px;
+            margin: 16px;
+            transition: background .3s;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .modal-title { font-size: 16px; font-weight: 600; color: var(--text); }
+        .modal-close { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; padding: 4px; }
+        .modal-close:hover { color: var(--text); }
+        .form-group { margin-bottom: 18px; }
+        .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--muted-light); margin-bottom: 8px; }
+        .form-input {
+            width: 100%;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            color: var(--text);
+            outline: none;
+            transition: border-color .2s, background .3s, color .3s;
+        }
+        .form-input:focus { border-color: rgba(37,99,235,0.5); }
+        .form-hint { font-size: 11px; color: var(--muted); margin-top: 5px; }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-soft);
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            text-align: center;
+            padding: 24px 32px;
+            border-top: 1px solid var(--border-soft);
+            font-size: 12px;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: color .3s, border-color .3s;
+        }
+        footer strong { color: var(--muted-light); }
+        .ig-link { display: inline-flex; align-items: center; text-decoration: none; transition: transform .2s; }
+        .ig-link:hover { transform: scale(1.2); }
+    </style>
+    <script>
+        const saved = localStorage.getItem("theme");
+        if (saved === "light") { document.documentElement.setAttribute("data-theme", "light"); }
+    </script>
+</head>
+<body>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <div class="topbar-greeting">Ciao, <span>{{ nome_utente }}</span> 👋</div>
+        <div class="topbar-right">
+            <button class="pill-btn" onclick="toggleTheme()" id="btn-theme-dash">☀️ Chiara</button>
+            <a href="/logout" class="pill-btn danger">Esci</a>
+        </div>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-inner">
+            <div class="hero-eyebrow">Piattaforma di studio</div>
+            <div class="hero-title">Tutor di <strong>Fisica</strong></div>
+            <div class="actions">
+                <a href="/quiz" class="action-btn">Allenamento Libero</a>
+                <a href="/palestra" class="action-btn gold">Palestra Errori</a>
+                <a href="/simulazione" class="action-btn primary">⏱ Avvia Simulazione</a>
+                <button class="action-btn" onclick="document.getElementById('modalPersonalizzata').classList.add('open')">
+                    Prova Esame 1cfu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="body">
+
+        <div class="section-header">
+            <div class="section-title">Analisi Punti Deboli</div>
+            <div class="section-badge">Dove perdi più punti</div>
+        </div>
+        <div class="card">
+            <div class="chart-wrap">
+                <canvas id="graficoDebolezze"></canvas>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <div class="section-title">Storico Simulazioni</div>
+        </div>
+        <div class="card">
+            {% if storico %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data e Ora</th>
+                            <th>Punteggio</th>
+                            <th style="text-align:center">Esatte</th>
+                            <th style="text-align:center">Errate</th>
+                            <th style="text-align:center">Omesse</th>
+                            <th style="text-align:right">Azione</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sim in storico %}
+                        <tr>
+                            <td>{{ sim.data_test.split('.')[0] }}</td>
+                            <td><span class="score-badge">{{ "%.2f"|format(sim.punteggio_totale) }} / 31</span></td>
+                            <td class="cell-green" style="text-align:center">{{ sim.corrette }}</td>
+                            <td class="cell-red" style="text-align:center">{{ sim.errate }}</td>
+                            <td class="cell-muted" style="text-align:center">{{ sim.non_date }}</td>
+                            <td style="text-align:right">
+                                <a href="/resoconto/{{ sim.id }}" target="_blank" class="open-btn">📄 Apri File</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty">
+                <div class="empty-icon">📊</div>
+                <div class="empty-title">Nessun dato disponibile</div>
+                <div class="empty-sub">Avvia la tua prima simulazione per iniziare a tracciare i progressi.</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modalPersonalizzata" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">⚙️ Configura Simulazione</div>
+                <button class="modal-close" onclick="document.getElementById('modalPersonalizzata').classList.remove('open')">×</button>
+            </div>
+            <form action="/simulazione_personalizzata" method="GET">
+                <div class="form-group">
+                    <label class="form-label" for="num_domande">Numero di Domande</label>
+                    <input class="form-input" type="number" id="num_domande" name="num_domande" placeholder="Es. 20" min="1" max="200" required>
+                    <div class="form-hint">Scegli quanti quesiti affrontare liberamente.</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="minuti">Minuti a disposizione</label>
+                    <input class="form-input" type="number" id="minuti" name="minuti" placeholder="Es. 45" min="1" max="300" required>
+                    <div class="form-hint">Imposta il tempo massimo per la durata della prova.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="action-btn" onclick="document.getElementById('modalPersonalizzata').classList.remove('open')">Annulla</button>
+                    <button type="submit" class="action-btn primary">Avvia Test</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <span>Created by <strong>Andrei Stoenciu</strong></span>
+        <a href="https://www.instagram.com/andreistoenciu?igsh=MXhlOHpkbHBkb2lmMg%3D%3D&utm_source=qr"
+           target="_blank" rel="noopener noreferrer" title="Follow on Instagram" class="ig-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="url(#ig-gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <defs>
+                    <linearGradient id="ig-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#f09433"/>
+                        <stop offset="50%" style="stop-color:#dc2743"/>
+                        <stop offset="100%" style="stop-color:#bc1888"/>
+                    </linearGradient>
+                </defs>
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
+        </a>
+    </footer>
+
+    <script>
+        function isLight() {
+            return document.documentElement.getAttribute("data-theme") === "light";
+        }
+
+        function aggiornaBottone() {
+            document.getElementById("btn-theme-dash").innerHTML = isLight() ? "🌙 Scura" : "☀️ Chiara";
+        }
+
+        function toggleTheme() {
+            if (isLight()) {
+                document.documentElement.removeAttribute("data-theme");
+                localStorage.setItem("theme", "dark");
+            } else {
+                document.documentElement.setAttribute("data-theme", "light");
+                localStorage.setItem("theme", "light");
+            }
+            aggiornaBottone();
+            caricaGrafico();
+        }
+
+        aggiornaBottone();
+
+        let mioGrafico = null;
+
+        async function caricaGrafico() {
+            try {
+                let response = await fetch('/api/statistiche_capitoli');
+                let dati = await response.json();
+
+                if (dati.length === 0) {
+                    document.getElementById('graficoDebolezze').parentElement.innerHTML =
+                        '<p style="text-align:center;color:var(--muted);padding:80px 0;font-size:13px;">Nessun errore registrato. Fai una simulazione per vedere i tuoi punti deboli!</p>';
+                    return;
+                }
+
+                let etichette = dati.map(d => d.capitolo.substring(0, 18) + (d.capitolo.length > 18 ? '…' : ''));
+                let datiErrate = dati.map(d => d.errate);
+                let datiOmesse = dati.map(d => d.omesse);
+
+                let light = isLight();
+                let textColor = light ? "#94a3b8" : "#64748b";
+                let gridColor = light ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.05)";
+                let omesseColor = light ? "rgba(203,213,225,0.9)" : "rgba(51,65,85,0.8)";
+
+                let ctx = document.getElementById('graficoDebolezze').getContext('2d');
+                if (mioGrafico) mioGrafico.destroy();
+
+                mioGrafico = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: etichette,
+                        datasets: [
+                            {
+                                label: 'Risposte Errate (-0.1 pt)',
+                                data: datiErrate,
+                                backgroundColor: 'rgba(239,68,68,0.8)',
+                                borderRadius: 5,
+                                borderSkipped: false
+                            },
+                            {
+                                label: 'Domande Omesse (0 pt)',
+                                data: datiOmesse,
+                                backgroundColor: omesseColor,
+                                borderRadius: 5,
+                                borderSkipped: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: textColor,
+                                    font: { family: 'DM Sans', size: 12 },
+                                    boxWidth: 10, boxHeight: 10,
+                                    borderRadius: 3, useBorderRadius: true
+                                }
+                            },
+                            tooltip: { mode: 'index', intersect: false }
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                ticks: { color: textColor, font: { family: 'DM Sans', size: 11 } },
+                                grid: { display: false },
+                                border: { display: false }
+                            },
+                            y: {
+                                stacked: true,
+                                ticks: { color: textColor, stepSize: 1, font: { family: 'DM Mono', size: 11 } },
+                                grid: { color: gridColor },
+                                border: { display: false }
+                            }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error("Errore nel caricamento del grafico:", error);
+            }
+        }
+
+        caricaGrafico();
+    </script>
+</body>
+</html>

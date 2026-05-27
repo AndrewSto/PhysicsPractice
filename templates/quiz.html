@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allenamento - Tutor Fisica</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --option-bg: #ffffff;
+            --option-hover: #f1f5f9;
+            --question-box-bg: #f8fafc;
+        }
+
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --option-bg: #0f172a;
+            --option-hover: #334155;
+            --question-box-bg: #0f172a;
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
+        
+        .question-card { background: var(--card-bg); border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); border: 1px solid var(--border-color); padding: 3.5rem; width: 100%; transition: all 0.3s ease;}
+        
+        .testo-domanda-container { background: var(--question-box-bg); border-left: 5px solid var(--primary); padding: 2rem 2.5rem; border-radius: 0 16px 16px 0; margin-bottom: 2.5rem; border-top: 1px solid var(--border-color); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+        .latex-box { font-size: 1.15rem; line-height: 1.9; color: var(--text-main); font-weight: 400; letter-spacing: 0.2px; }
+        
+        /* Opzioni Cliccabili */
+        .opzione-testo { border-radius: 12px; border: 2px solid var(--border-color); padding: 18px 24px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s ease; background: var(--option-bg); display: flex; align-items: center;}
+        .opzione-testo:hover { border-color: var(--text-muted); background: var(--option-hover); transform: translateX(5px); }
+        
+        .lettera-opzione { color: var(--text-muted); font-weight: 800; font-size: 1.2rem; margin-right: 15px; width: 30px; }
+        
+        /* Colori Risposta Immediata */
+        .opzione-corretta { border-color: #10b981 !important; background: rgba(16, 185, 129, 0.1) !important; pointer-events: none;}
+        .opzione-corretta .lettera-opzione { color: #10b981; }
+        .opzione-sbagliata { border-color: #ef4444 !important; background: rgba(239, 68, 68, 0.1) !important; pointer-events: none;}
+        .opzione-sbagliata .lettera-opzione { color: #ef4444; }
+
+        .btn-action { border-radius: 12px; font-weight: 600; padding: 12px 24px; transition: all 0.2s; }
+        .btn-nav { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); }
+        .btn-nav:hover { background: var(--option-hover); }
+    </style>
+    <script>
+        if (localStorage.getItem("theme") === "dark") { document.documentElement.setAttribute("data-theme", "dark"); }
+        MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="py-5">
+    <div class="container" style="max-width: 850px;">
+        
+        {% if vuota %}
+            <div class="question-card text-center py-5">
+                <div class="fs-1 mb-4">🏆</div>
+                <h2 class="fw-bold mb-3 text-main">Palestra Vuota!</h2>
+                <p class="text-muted fs-5 mb-5">Non hai nessun errore in sospeso. Hai recuperato tutto o non hai ancora fatto simulazioni!</p>
+                <a href="/" class="btn btn-primary btn-action px-5 py-3 fs-5">Torna alla Dashboard</a>
+            </div>
+        {% else %}
+            <div class="question-card">
+                
+                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                    <h5 class="fw-bold text-muted m-0">Domanda <span class="text-main">#{{ domanda.id }}</span></h5>
+                    <div class="text-end">
+                        <span class="badge bg-primary px-3 py-2 rounded-pill opacity-75">{{ domanda.sottoargomento }}</span>
+                    </div>
+                </div>
+                
+                {% if modalita == 'palestra' %}
+                <div class="alert fw-bold mb-4 d-flex align-items-center" style="background-color: rgba(245, 158, 11, 0.1); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 1rem 1.5rem;">
+                    <span class="fs-3 me-3">⚠️</span> 
+                    <div>Hai sbagliato o omesso questa domanda in passato.<br>Dimostra di aver imparato la lezione!</div>
+                </div>
+                {% endif %}
+                
+                <div class="testo-domanda-container">
+                    <div class="latex-box">{{ domanda.testo_pulito | safe }}</div>
+                </div>
+
+                <div class="mb-5" id="options-container">
+                    {% set lettere = ['A', 'B', 'C', 'D', 'E'] %}
+                    {% for opzione in domanda.lista_opzioni %}
+                        <div class="opzione-testo shadow-sm" id="opt-{{ lettere[loop.index0] }}" onclick="handleAnswer('{{ lettere[loop.index0] }}')">
+                            <div class="lettera-opzione">{{ lettere[loop.index0] }})</div> 
+                            <div style="flex-grow: 1;" class="latex-box mb-0">{{ opzione | safe }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <div id="feedback-msg" class="text-center mt-4 fw-bold fs-5 mb-4" style="min-height: 30px;"></div>
+
+                <div class="d-flex justify-content-center gap-4 align-items-center mt-2 border-top pt-4">
+                    <a href="/" class="btn btn-nav btn-action px-4">Dashboard</a>
+                    <div id="next-btn-container" style="visibility: hidden; opacity: 0; transition: opacity 0.3s;">
+                        <a href="{{ '/palestra' if modalita == 'palestra' else '/quiz' }}" class="btn btn-primary btn-action px-4 py-2 shadow-sm fs-5">Prossima Domanda ➔</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+
+    {% if not vuota %}
+    <script>
+        const domandaId = {{ domanda.id }};
+        let rispostaSalvata = "{{ domanda.risposta_corretta }}";
+        if (rispostaSalvata === "None" || rispostaSalvata === "") rispostaSalvata = null;
+        let haGiaRisposto = false;
+
+        async function handleAnswer(scelta) {
+            if (haGiaRisposto) return; 
+            haGiaRisposto = true; 
+            
+            // Blocca ulteriori click
+            document.getElementById('options-container').style.pointerEvents = "none";
+            
+            let contenitore = document.getElementById('opt-' + scelta);
+            let feedback = document.getElementById('feedback-msg');
+
+            try {
+                if (scelta === rispostaSalvata) {
+                    contenitore.classList.add('opzione-corretta');
+                    feedback.innerHTML = "🎉 Esatto! Ottimo lavoro.";
+                    feedback.className = "text-center fw-bold fs-5 mb-4 text-success";
+                    
+                    // Il database registra la vittoria! Se sei in Palestra, ti rimuove l'errore dallo storico!
+                    await fetch('/registra_statistica', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_domanda: domandaId, esito: 'corretta' }) });
+                } else {
+                    contenitore.classList.add('opzione-sbagliata');
+                    let optCorretta = document.getElementById('opt-' + rispostaSalvata);
+                    if (optCorretta) optCorretta.classList.add('opzione-corretta');
+                    
+                    feedback.innerHTML = "❌ Sbagliato. La risposta esatta era la " + rispostaSalvata;
+                    feedback.className = "text-center fw-bold fs-5 mb-4 text-danger";
+                    await fetch('/registra_statistica', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_domanda: domandaId, esito: 'sbagliata' }) });
+                }
+            } catch (error) { console.error(error); }
+            
+            let nextBtn = document.getElementById('next-btn-container');
+            nextBtn.style.visibility = "visible";
+            nextBtn.style.opacity = "1";
+        }
+    </script>
+    {% endif %}
+</body>
+</html>

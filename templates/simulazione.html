@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulazione Esame</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* DEFINIZIONE COLORI: Tema Chiaro */
+        :root {
+            --primary: #2563eb;
+            --bg-color: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-main: #1e293b; /* Leggermente più morbido del nero puro */
+            --text-muted: #64748b;
+            --option-bg: #ffffff;
+            --option-hover: #f1f5f9;
+            --timer-bg: #f1f5f9;
+            --question-box-bg: #f8fafc; /* Sfondo dedicato per la domanda */
+        }
+
+        /* DEFINIZIONE COLORI: Tema Scuro */
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --bg-color: #0f172a;
+            --sidebar-bg: #1e293b;
+            --card-bg: #1e293b;
+            --border-color: #334155;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --option-bg: #0f172a;
+            --option-hover: #334155;
+            --timer-bg: #0f172a;
+            --question-box-bg: #0f172a; /* Sfondo dedicato per la domanda */
+        }
+
+        body { background: var(--bg-color); font-family: 'Inter', sans-serif; color: var(--text-main); transition: all 0.3s ease; }
+        
+        /* Layout */
+        .sidebar { background: var(--sidebar-bg); border-right: 1px solid var(--border-color); height: 100vh; position: sticky; top: 0; overflow-y: auto; display: flex; flex-direction: column; transition: all 0.3s ease;}
+        .main-content { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem;}
+        
+        /* Timer e Dark Mode Btn */
+        .timer-box { font-family: monospace; font-size: 2.5rem; color: var(--text-main); font-weight: 700; letter-spacing: -2px; background: var(--timer-bg); border-radius: 16px; padding: 15px; margin-bottom: 20px;}
+        .timer-box.danger { color: #dc3545; background: #fff5f5; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .theme-toggle { border-radius: 12px; font-weight: 600; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); padding: 8px; cursor: pointer; transition: 0.2s;}
+        .theme-toggle:hover { background: var(--option-hover); }
+
+        /* Griglia Domande */
+        .grid-btn { width: 42px; height: 42px; border-radius: 50%; font-weight: 600; font-size: 0.95rem; margin: 4px; border: 1px solid var(--border-color); color: var(--text-muted); background: var(--card-bg); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none;}
+        .grid-btn:hover { border-color: var(--text-muted); background: var(--option-hover);}
+        .grid-btn.btn-answered { background-color: var(--primary); border-color: var(--primary); color: white; box-shadow: 0 4px 10px rgba(37,99,235,0.25); }
+        .grid-btn.active-question { border: 3px solid var(--text-main); color: var(--text-main); font-weight: 700; transform: scale(1.1); box-shadow: 0 4px 12px rgba(0,0,0,0.1);}
+
+        /* Area Domanda */
+        .question-card { background: var(--card-bg); border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 1px solid var(--border-color); padding: 3.5rem; width: 100%; max-width: 900px; transition: all 0.3s ease;}
+        
+        /* NUOVO STILE PER LA LEGGIBILITÀ DEL TESTO */
+        .testo-domanda-container {
+            background: var(--question-box-bg);
+            border-left: 5px solid var(--primary);
+            padding: 2rem 2.5rem;
+            border-radius: 0 16px 16px 0;
+            margin-bottom: 2.5rem;
+            border-top: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .latex-box { 
+            font-size: 1.15rem; 
+            line-height: 1.9; 
+            color: var(--text-main); 
+            font-weight: 400; /* Tolto il grassetto fisso per non affaticare gli occhi */
+            letter-spacing: 0.2px;
+        }
+        
+        /* Opzioni di risposta */
+        .opzione-testo { border-radius: 12px; border: 2px solid var(--border-color); padding: 18px 24px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s ease; background: var(--option-bg); font-size: 1.05rem; display: flex; align-items: center;}
+        .opzione-testo:hover { border-color: var(--text-muted); background: var(--option-hover); }
+        .opzione-selezionata { border-color: var(--primary) !important; background: rgba(37, 99, 235, 0.08) !important; box-shadow: 0 4px 15px rgba(37,99,235,0.08); }
+        .lettera-opzione { color: var(--text-muted); font-weight: 800; font-size: 1.2rem; margin-right: 15px; width: 30px; }
+        .opzione-selezionata .lettera-opzione { color: var(--primary); }
+
+        /* Bottoni Azione */
+        .btn-action { border-radius: 12px; font-weight: 600; padding: 12px 24px; transition: all 0.2s; }
+        .btn-nav { border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); }
+        .btn-nav:hover { background: var(--option-hover); }
+        
+        #risultati-screen { display: none; }
+        /* --- ADATTAMENTO PER SMARTPHONE E TABLET --- */
+        @media (max-width: 768px) {
+            /* La barra laterale diventa una barra superiore compatta */
+            .sidebar { 
+                height: auto; 
+                position: relative; 
+                padding: 1.5rem 1rem !important; 
+                border-right: none; 
+                border-bottom: 2px solid var(--border-color);
+            }
+            .timer-box { font-size: 2rem; padding: 10px; margin-bottom: 15px; }
+            
+            /* Rimpiccioliamo un po' i margini della domanda per recuperare spazio */
+            .main-content { padding: 1rem; align-items: flex-start; }
+            .question-card { padding: 1.5rem; border-radius: 12px; }
+            .testo-domanda-container { padding: 1.2rem; }
+            
+            /* Il contenitore dei pallini diventa scrollabile in orizzontale se sono troppi */
+            #griglia { 
+                max-height: 150px; 
+                overflow-y: auto; 
+                justify-content: flex-start !important;
+            }
+        }
+    </style>
+    <script>
+        if (localStorage.getItem("theme") === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+        }
+        MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<div class="container-fluid" id="esame-screen">
+    <div class="row">
+        
+        <div class="col-md-3 col-lg-2 sidebar p-4">
+            <div class="text-center">
+                <div class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.8rem; letter-spacing: 1px;">Tempo Rimanente</div>
+                <div class="timer-box" id="timer">--:--</div>
+                
+                <button class="theme-toggle w-100 mb-4 shadow-sm" onclick="toggleDarkMode()" id="btn-theme">
+                    🌙 Modalità Scura
+                </button>
+            </div>
+            
+            <div class="d-flex flex-wrap justify-content-center mb-auto" id="griglia">
+                {% for d in domande %}
+                    <div class="grid-btn" id="btn-grid-{{ loop.index0 }}" onclick="mostraDomanda({{ loop.index0 }})">
+                        {{ loop.index }}
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="mt-4">
+                <button type="button" class="btn btn-primary btn-action w-100 mb-2 py-3 shadow-sm" onclick="consegnaTest()">Consegna Esame</button>
+                <button class="btn text-danger fw-bold w-100 py-2" style="border-radius: 12px; background: transparent; border: 1px solid #dc3545;" onclick="annullaProva()">Annulla Prova</button>
+            </div>
+        </div>
+
+        <div class="col-md-9 col-lg-10 main-content">
+            {% for d in domande %}
+            <div class="question-card" id="domanda-{{ loop.index0 }}" style="display: none;">
+                
+                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                    <h5 class="fw-bold text-muted m-0">Domanda {{ loop.index }} <span style="font-weight: 400;">di {{ totale_domande if totale_domande else 31 }}</span></h5>
+                    <span class="badge bg-primary px-3 py-2 rounded-pill opacity-75">{{ d.sottoargomento }}</span>
+                </div>
+                
+                <div class="testo-domanda-container">
+                    <div class="latex-box">
+                        {{ d.testo_pulito | safe }}
+                    </div>
+                </div>
+                
+                <div class="opzioni-container mb-5">
+                    {% set lettere = ['A', 'B', 'C', 'D', 'E'] %}
+                    {% set index_domanda = loop.index0 %}
+                    
+                    {% for opzione in d.lista_opzioni %}
+                        <div class="opzione-testo" 
+                             id="opt-{{ index_domanda }}-{{ lettere[loop.index0] }}"
+                             onclick="selezionaRisposta({{ index_domanda }}, '{{ lettere[loop.index0] }}', {{ d.id }})">
+                            <div class="lettera-opzione">{{ lettere[loop.index0] }}</div> 
+                            <div style="flex-grow: 1;" class="latex-box">{{ opzione | safe }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="d-flex justify-content-between pt-3 border-top mt-4">
+                    <button class="btn btn-nav btn-action" onclick="cambiaDomanda(-1)">⬅ Precedente</button>
+                    <button class="btn btn-nav btn-action" onclick="cambiaDomanda(1)">Successiva ➡</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="container mt-5 pb-5" id="risultati-screen" style="display: none;">
+    <div class="question-card text-center mx-auto mt-5" style="max-width: 800px;">
+        <div class="fs-1 mb-3">🎓</div>
+        <h2 class="mb-4 fw-bold text-main">Esame Concluso!</h2>
+        <h1 class="display-3 fw-bold text-primary mb-5" id="voto-finale">-- / {{ totale_domande if totale_domande else 31 }}</h1>
+        
+        <div class="d-flex justify-content-around border-top pt-4 mb-5">
+            <div>
+                <div class="fs-2 text-success fw-bold" id="res-corrette">0</div>
+                <div class="text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Esatte (+1)</div>
+            </div>
+            <div>
+                <div class="fs-2 text-danger fw-bold" id="res-errate">0</div>
+                <div class="text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Errate (-0.1)</div>
+            </div>
+            <div>
+                <div class="fs-2 text-secondary fw-bold" id="res-nondate">0</div>
+                <div class="text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Omesse (0)</div>
+            </div>
+        </div>
+        
+        <h4 class="fw-bold mb-3 text-start border-bottom pb-2 text-main">Dettaglio Risposte</h4>
+        <div id="dettagli-risposte-container" class="mb-5" style="max-height: 400px; overflow-y: auto;">
+        </div>
+
+        <button onclick="copiaErroriPerTutor()" class="btn btn-outline-primary btn-action px-4 py-3 mb-3 w-100 fs-5 fw-bold" id="btn-copia">
+            🤖 Copia errori per il Tutor AI
+        </button>
+        <a href="/" class="btn btn-primary btn-action px-5 py-3 w-100 fs-5">🏠 Torna alla Dashboard</a>
+    </div>
+</div>
+
+<script>
+    function aggiornaTestoBottoneTema() {
+        let btn = document.getElementById("btn-theme");
+        if (document.documentElement.getAttribute("data-theme") === "dark") {
+            btn.innerHTML = "☀️ Modalità Chiara";
+        } else {
+            btn.innerHTML = "🌙 Modalità Scura";
+        }
+    }
+    
+    aggiornaTestoBottoneTema();
+
+    function toggleDarkMode() {
+        let html = document.documentElement;
+        if (html.getAttribute("data-theme") === "dark") {
+            html.removeAttribute("data-theme");
+            localStorage.setItem("theme", "light");
+        } else {
+            html.setAttribute("data-theme", "dark");
+            localStorage.setItem("theme", "dark");
+        }
+        aggiornaTestoBottoneTema();
+    }
+
+    let indiceCorrente = 0;
+    const totaleDomande = {{ totale_domande if totale_domande else 31 }};
+    let risposteUtente = {}; 
+    let testoPerTutorAI = ""; 
+    
+    let mappaDomande = {};
+    {% for d in domande %}
+        mappaDomande[{{ d.id }}] = {{ loop.index }};
+    {% endfor %}
+    
+    mostraDomanda(0);
+
+    function mostraDomanda(indice) {
+        document.querySelectorAll('.question-card:not(#risultati-screen > div)').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.grid-btn').forEach(btn => btn.classList.remove('active-question'));
+        
+        if (indice < 0) indice = 0;
+        if (indice >= totaleDomande) indice = totaleDomande - 1;
+        indiceCorrente = indice;
+        
+        document.getElementById('domanda-' + indiceCorrente).style.display = 'block';
+        document.getElementById('btn-grid-' + indiceCorrente).classList.add('active-question');
+    }
+
+    function cambiaDomanda(step) { mostraDomanda(indiceCorrente + step); }
+
+    function selezionaRisposta(indiceDomandaHTML, lettera, idDomandaDB) {
+        let contenitore = document.getElementById('domanda-' + indiceDomandaHTML);
+        let optCliccata = document.getElementById('opt-' + indiceDomandaHTML + '-' + lettera);
+        let btnGriglia = document.getElementById('btn-grid-' + indiceDomandaHTML);
+
+        if (risposteUtente[idDomandaDB] === lettera) {
+            risposteUtente[idDomandaDB] = null;
+            optCliccata.classList.remove('opzione-selezionata');
+            btnGriglia.classList.remove('btn-answered');
+        } 
+        else {
+            risposteUtente[idDomandaDB] = lettera;
+            contenitore.querySelectorAll('.opzione-testo').forEach(el => el.classList.remove('opzione-selezionata'));
+            optCliccata.classList.add('opzione-selezionata');
+            btnGriglia.classList.add('btn-answered');
+        }
+    }
+
+    // --- NUOVO TIMER DINAMICO ---
+    let minutiImpostati = {{ minuti_timer if minuti_timer else 60 }};
+    let tempoRimanente = minutiImpostati * 60; 
+    let timerElement = document.getElementById('timer');
+    
+    let timerInterval = setInterval(function() {
+        tempoRimanente--;
+        let minuti = Math.floor(tempoRimanente / 60);
+        let secondi = tempoRimanente % 60;
+        
+        if (minuti < 10) minuti = "0" + minuti;
+        if (secondi < 10) secondi = "0" + secondi;
+        timerElement.innerText = minuti + ":" + secondi;
+        
+        if (tempoRimanente <= 300) { timerElement.classList.add('danger'); }
+        
+        if (tempoRimanente <= 0) {
+            clearInterval(timerInterval);
+            alert("TEMPO SCADUTO! L'esame verrà consegnato automaticamente.");
+            consegnaTest();
+        }
+    }, 1000);
+
+    function annullaProva() {
+        if (confirm("Sei sicuro di voler annullare?\nI progressi andranno persi e il test NON verrà registrato.")) {
+            clearInterval(timerInterval);
+            window.location.href = "/";
+        }
+    }
+
+    function copiaErroriPerTutor() {
+        navigator.clipboard.writeText(testoPerTutorAI).then(() => {
+            let btn = document.getElementById('btn-copia');
+            btn.innerHTML = "✅ Copiato! Vai sulla chat e incolla.";
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-success', 'text-white');
+            setTimeout(() => {
+                btn.innerHTML = "🤖 Copia errori per il Tutor AI";
+                btn.classList.remove('btn-success', 'text-white');
+                btn.classList.add('btn-outline-primary');
+            }, 3000);
+        }).catch(err => {
+            alert("Impossibile copiare. Errore del browser.");
+        });
+    }
+
+    function pulisciTestoPerAI(htmlTesto) {
+        let testo = htmlTesto.replace(/<ol type="I"[^>]*>/g, '\n')
+                             .replace(/<ol[^>]*>/g, '\n')
+                             .replace(/<\/ol>/g, '\n')
+                             .replace(/<li[^>]*>/g, '\n• ')
+                             .replace(/<br\s*[\/]?>/gi, "\n");
+        let temp = document.createElement("div");
+        temp.innerHTML = testo;
+        return (temp.textContent || temp.innerText || "").trim();
+    }
+
+    async function consegnaTest() {
+        if (tempoRimanente > 0 && !confirm("Sei sicuro di voler consegnare? Le domande omesse varranno 0 punti.")) return;
+        
+        clearInterval(timerInterval);
+        
+        let btnConsegna = document.querySelector("button[onclick='consegnaTest()']");
+        btnConsegna.innerHTML = "⏳ Calcolo...";
+        btnConsegna.disabled = true;
+        
+        document.getElementById('esame-screen').style.opacity = '0.4';
+        document.getElementById('esame-screen').style.pointerEvents = 'none';
+        
+        let payloadRisposte = {};
+        {% for d in domande %}
+            payloadRisposte[{{ d.id }}] = risposteUtente[{{ d.id }}] ? risposteUtente[{{ d.id }}] : null;
+        {% endfor %}
+
+        try {
+            let response = await fetch('/salva_simulazione', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ risposte: payloadRisposte })
+            });
+            
+            if (!response.ok) {
+                alert("Errore del server!");
+                window.location.reload();
+                return;
+            }
+
+            let result = await response.json();
+            
+            let htmlDettagli = '<div class="list-group text-start">';
+            
+            result.dettagli.sort((a, b) => {
+                let numA = mappaDomande[Number(a.id_domanda)] || 999;
+                let numB = mappaDomande[Number(b.id_domanda)] || 999;
+                return numA - numB;
+            });
+
+            testoPerTutorAI = "Ciao Tutor! Ho appena terminato una simulazione. Potresti aiutarmi a capire questi errori?\n\n";
+            let erroriTrovati = false;
+            let contatoreErrori = 1;
+
+            result.dettagli.forEach(d => {
+                let num = mappaDomande[d.id_domanda];
+                let icona = '', coloreClass = '', puntiTxt = '';
+
+                if (d.esito === 'corretta') {
+                    icona = '✅'; coloreClass = 'list-group-item-success'; puntiTxt = '+1';
+                } else {
+                    let testoPulito = pulisciTestoPerAI(d.testo_domanda);
+                    
+                    if (d.esito === 'errata') {
+                        icona = '❌'; coloreClass = 'list-group-item-danger'; puntiTxt = '-0.1';
+                        testoPerTutorAI += `--- ERRORE ${contatoreErrori} (Era la Domanda ${num} della simulazione) ---\nTESTO:\n${testoPulito}\n\nLA MIA RISPOSTA: ${d.risposta_data}\nRISPOSTA CORRETTA: ${d.risposta_esatta}\n\n`;
+                    } else {
+                        icona = '⚪'; coloreClass = 'list-group-item-secondary'; puntiTxt = '0';
+                        testoPerTutorAI += `--- OMESSA ${contatoreErrori} (Era la Domanda ${num} della simulazione) ---\nTESTO:\n${testoPulito}\n\nRISPOSTA CORRETTA: ${d.risposta_esatta}\n\n`;
+                    }
+                    erroriTrovati = true;
+                    contatoreErrori++;
+                }
+
+                htmlDettagli += `
+                <div class="list-group-item ${coloreClass} d-flex justify-content-between align-items-center mb-1 rounded border">
+                    <div>
+                        <strong class="me-2">Domanda ${num}</strong> ${icona} <br>
+                        <span style="font-size: 0.9rem;">Tua risposta: <b>${d.risposta_data}</b> | Esatta: <b>${d.risposta_esatta}</b></span>
+                    </div>
+                    <span class="badge bg-dark rounded-pill fs-6">${puntiTxt}</span>
+                </div>`;
+            });
+            
+            if(!erroriTrovati) {
+                testoPerTutorAI = "Ho fatto zero errori nella simulazione! Ottimo lavoro.";
+            }
+
+            htmlDettagli += '</div>';
+            document.getElementById('dettagli-risposte-container').innerHTML = htmlDettagli;
+
+            document.getElementById('voto-finale').innerText = Number(result.punteggio).toFixed(2) + " / {{ totale_domande if totale_domande else 31 }}";
+            document.getElementById('res-corrette').innerText = result.corrette;
+            document.getElementById('res-errate').innerText = result.errate;
+            document.getElementById('res-nondate').innerText = result.non_date;
+
+            document.getElementById('esame-screen').style.display = 'none';
+            document.getElementById('risultati-screen').style.display = 'block';
+            
+        } catch (error) { 
+            alert("Errore di rete. Riprova."); 
+            window.location.reload();
+        }
+    }
+</script>
+</body>
+</html>

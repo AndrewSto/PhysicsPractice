@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resoconto Simulazione</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #0f172a; padding: 2rem; }
+        .foglio-a4 { background: white; max-width: 900px; margin: 0 auto; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .latex-box { font-size: 1.1rem; line-height: 1.6; }
+        
+        /* Regole perfette per la Stampa PDF */
+        @media print {
+            body { background: white; padding: 0; }
+            .foglio-a4 { box-shadow: none; padding: 0; max-width: 100%; }
+            .no-print { display: none !important; }
+            .domanda-block { page-break-inside: avoid; margin-bottom: 25px; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px;}
+        }
+
+        .domanda-block { margin-bottom: 40px; border-bottom: 2px solid #f1f5f9; padding-bottom: 30px; }
+        .badge-esito { font-size: 0.9rem; padding: 5px 10px; border-radius: 6px; }
+        .esito-corretta { background: #dcfce7; color: #166534; }
+        .esito-errata { background: #fee2e2; color: #991b1b; }
+        .esito-nondata { background: #f1f5f9; color: #475569; }
+        
+        /* Stili per le opzioni A, B, C, D, E */
+        .opzione-riga { padding: 10px 15px; border-radius: 8px; margin-bottom: 6px; display: flex; align-items: center; border: 1px solid transparent;}
+        .opzione-corretta { background-color: rgba(22, 163, 74, 0.1); border-color: rgba(22, 163, 74, 0.3); }
+        .opzione-sbagliata { background-color: rgba(220, 38, 38, 0.08); border-color: rgba(220, 38, 38, 0.2); text-decoration: line-through; text-decoration-color: rgba(220,38,38,0.5);}
+    </style>
+    <script>
+        MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+    <div class="text-center mb-4 no-print">
+        <button onclick="window.print()" class="btn btn-primary btn-lg fw-bold shadow-sm px-4 rounded-pill">
+            🖨️ Salva come PDF / Stampa
+        </button>
+        <button onclick="window.close()" class="btn btn-outline-secondary btn-lg fw-bold px-4 rounded-pill ms-2">
+            Chiudi Scheda
+        </button>
+    </div>
+
+    <div class="foglio-a4">
+        <div class="border-bottom pb-4 mb-5 text-center">
+            <h1 class="fw-bold">Report Simulazione</h1>
+            <p class="text-muted fs-5 mb-2">Data del test: <strong>{{ simulazione.data_test.split('.')[0] }}</strong></p>
+            
+            <div class="d-flex justify-content-center gap-4 mt-4">
+                <div class="bg-light px-4 py-2 rounded text-center">
+                    <div class="text-muted small text-uppercase fw-bold">Punteggio</div>
+                    <div class="fs-2 fw-bold text-primary">{{ "%.2f"|format(simulazione.punteggio_totale) }} / 31</div>
+                </div>
+                <div class="bg-light px-4 py-2 rounded text-center">
+                    <div class="text-muted small text-uppercase fw-bold">Esatte</div>
+                    <div class="fs-3 fw-bold text-success">{{ simulazione.corrette }}</div>
+                </div>
+                <div class="bg-light px-4 py-2 rounded text-center">
+                    <div class="text-muted small text-uppercase fw-bold">Errate</div>
+                    <div class="fs-3 fw-bold text-danger">{{ simulazione.errate }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            {% for d in dettagli %}
+            <div class="domanda-block">
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold m-0 text-secondary">Domanda #{{ loop.index }} <span class="fs-6 fw-normal">({{ d.capitolo }})</span></h5>
+                    
+                    {% if d.esito == 'corretta' %}
+                        <span class="badge-esito esito-corretta fw-bold">✅ Corretta (+1 pt)</span>
+                    {% elif d.esito == 'errata' %}
+                        <span class="badge-esito esito-errata fw-bold">❌ Errata (-0.1 pt)</span>
+                    {% else %}
+                        <span class="badge-esito esito-nondata fw-bold">⚪ Omessa (0 pt)</span>
+                    {% endif %}
+                </div>
+
+                <div class="latex-box fw-bold mb-3">
+                    {{ d.testo_pulito | safe }}
+                </div>
+
+                <div class="mb-4 ps-3 border-start border-4 border-secondary border-opacity-25">
+                    {% set lettere = ['A', 'B', 'C', 'D', 'E'] %}
+                    
+                    {% for opzione in d.lista_opzioni %}
+                        {% set let = lettere[loop.index0] %}
+                        {% set classe_opzione = '' %}
+                        {% set icona = '' %}
+                        
+                        {% if let == d.risposta_corretta %}
+                            {% set classe_opzione = 'opzione-corretta' %}
+                            {% set icona = '✅' %}
+                        {% elif let == d.risposta_data and d.esito == 'errata' %}
+                            {% set classe_opzione = 'opzione-sbagliata' %}
+                            {% set icona = '❌' %}
+                        {% endif %}
+                        
+                        <div class="opzione-riga {{ classe_opzione }}">
+                            <strong class="me-3 fs-5" style="min-width: 25px;">{{ let }})</strong> 
+                            <span class="latex-box mb-0" style="font-size: 1.05rem; flex-grow: 1;">{{ opzione | safe }}</span>
+                            {% if icona %}<span class="ms-2 fs-5">{{ icona }}</span>{% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="bg-light p-3 rounded d-flex gap-4">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-bold">Tua Risposta:</span><br>
+                        <span class="fs-5 fw-bold {% if d.esito == 'corretta' %}text-success{% elif d.esito == 'errata' %}text-danger{% else %}text-secondary{% endif %}">
+                            {{ d.risposta_data if d.risposta_data != 'None' and d.risposta_data else 'Nessuna' }}
+                        </span>
+                    </div>
+                    <div>
+                        <span class="text-muted small text-uppercase fw-bold">Risposta Esatta:</span><br>
+                        <span class="fs-5 fw-bold text-success">{{ d.risposta_corretta }}</span>
+                    </div>
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</body>
+</html>
