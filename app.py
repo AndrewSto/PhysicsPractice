@@ -138,9 +138,20 @@ def index():
     cur.execute('SELECT COUNT(*) as cnt FROM domande')
     totale = cur.fetchone()['cnt']
     cur.execute('SELECT * FROM simulazioni WHERE id_utente = %s ORDER BY data_test DESC LIMIT 10', (current_user.id,))
-    storico = cur.fetchall()
+    storico_grezzo = cur.fetchall()
     conn.close()
-    return render_template('index.html', totale=totale, storico=storico, nome_utente=current_user.username)
+
+    # --- CORREZIONE DATE PER POSTGRESQL ---
+    # Convertiamo l'oggetto datetime in una stringa di testo
+    # così l'index.html può usare .split() senza andare in crash
+    storico_pulito = []
+    for s in storico_grezzo:
+        s_dict = dict(s)
+        s_dict['data_test'] = str(s_dict['data_test'])
+        storico_pulito.append(s_dict)
+    # --------------------------------------
+
+    return render_template('index.html', totale=totale, storico=storico_pulito, nome_utente=current_user.username)
 
 @app.route('/simulazione')
 @login_required
@@ -210,8 +221,14 @@ def simulazione_personalizzata():
 @login_required
 def salva_simulazione():
     try:
-        dati = request.json
-        risposte_utente = dati.get('risposte', {})
+        # get_json(silent=True) evita il crash se il file non è JSON
+        dati = request.get_json(silent=True)
+        
+        if dati:
+            risposte_utente = dati.get('risposte', {})
+        else:
+            risposte_utente = request.form.to_dict()
+
         conn = get_db_connection()
         cur = get_cursor(conn)
 
@@ -244,9 +261,14 @@ def salva_simulazione():
                 "esito": esito
             })
 
+        # --- LE DUE CORREZIONI CHIAVE SONO QUI ---
+        # 1. round(punteggio, 2) evita i crash sui numeri decimali infiniti
+        # 2. data_test e CURRENT_TIMESTAMP salvano la data esatta e impediscono il valore NULL
         cur.execute(
-            'INSERT INTO simulazioni (punteggio_totale, corrette, errate, non_date, id_utente) VALUES (%s, %s, %s, %s, %s) RETURNING id',
-            (punteggio, corrette, errate, non_date, current_user.id)
+            '''INSERT INTO simulazioni 
+               (punteggio_totale, corrette, errate, non_date, id_utente, data_test) 
+               VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING id''',
+            (round(punteggio, 2), corrette, errate, non_date, current_user.id)
         )
         id_simulazione = cur.fetchone()['id']
 
