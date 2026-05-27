@@ -356,15 +356,22 @@ def quiz():
 def palestra():
     conn = get_db_connection()
     cur = get_cursor(conn)
+    
+    # --- CORREZIONE POSTGRESQL ---
+    # Usiamo "WITH" per creare un cesto temporaneo di domande uniche
+    # e poi peschiamo a caso (ORDER BY RANDOM) da quel cesto.
     cur.execute('''
-        SELECT DISTINCT d.* FROM domande d
-        JOIN dettagli_simulazione ds ON d.id = ds.id_domanda
-        JOIN simulazioni s ON ds.id_simulazione = s.id
-        LEFT JOIN statistiche st ON d.id = st.id_domanda AND st.id_utente = %s
-        WHERE s.id_utente = %s AND ds.esito IN ('errata', 'non_data')
-        AND (st.volte_corretta IS NULL OR st.volte_corretta = 0)
-        ORDER BY RANDOM() LIMIT 1
+        WITH domande_uniche AS (
+            SELECT DISTINCT d.* FROM domande d
+            JOIN dettagli_simulazione ds ON d.id = ds.id_domanda
+            JOIN simulazioni s ON ds.id_simulazione = s.id
+            LEFT JOIN statistiche st ON d.id = st.id_domanda AND st.id_utente = %s
+            WHERE s.id_utente = %s AND ds.esito IN ('errata', 'non_data')
+            AND (st.volte_corretta IS NULL OR st.volte_corretta = 0)
+        )
+        SELECT * FROM domande_uniche ORDER BY RANDOM() LIMIT 1
     ''', (current_user.id, current_user.id))
+    
     domanda_db = cur.fetchone()
     conn.close()
 
