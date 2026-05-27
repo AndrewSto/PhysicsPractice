@@ -138,7 +138,7 @@
             border-bottom: 1px solid var(--border-soft);
             transition: border-color .3s;
         }
-        .hero-inner { max-width: 960px; margin: 0 auto; }
+        .hero-inner { max-width: 960px; margin: 0 auto; text-align: center; }
         .hero-eyebrow {
             font-size: 11px;
             font-weight: 500;
@@ -160,7 +160,7 @@
         .hero-title strong { font-weight: 600; color: var(--hero-strong); }
 
         /* ── BUTTONS ── */
-        .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
         .action-btn {
             font-family: 'DM Sans', sans-serif;
             font-size: 13px;
@@ -361,7 +361,6 @@
 </head>
 <body>
 
-    <!-- TOPBAR -->
     <div class="topbar">
         <div class="topbar-greeting">Ciao, <span>{{ nome_utente }}</span> 👋</div>
         <div class="topbar-right">
@@ -370,7 +369,6 @@
         </div>
     </div>
 
-    <!-- HERO -->
     <div class="hero">
         <div class="hero-inner">
             <div class="hero-eyebrow">Piattaforma di studio</div>
@@ -386,7 +384,6 @@
         </div>
     </div>
 
-    <!-- BODY -->
     <div class="body">
 
         <div class="section-header">
@@ -442,7 +439,6 @@
         </div>
     </div>
 
-    <!-- MODAL -->
     <div class="modal-overlay" id="modalPersonalizzata" onclick="if(event.target===this)this.classList.remove('open')">
         <div class="modal-box">
             <div class="modal-header">
@@ -468,7 +464,6 @@
         </div>
     </div>
 
-    <!-- FOOTER -->
     <footer>
         <span>Created by <strong>Andrei Stoenciu</strong></span>
         <a href="https://www.instagram.com/andreistoenciu?igsh=MXhlOHpkbHBkb2lmMg%3D%3D&utm_source=qr"
@@ -484,7 +479,7 @@
                 </defs>
                 <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                 <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                <path d="M17.5 6.5" x1="17.5" y1="6.5" x2="17.51" y2="6.5"></path>
             </svg>
         </a>
     </footer>
