@@ -189,7 +189,7 @@ def simulazione():
         d_dict['testo_pulito'] = parti_pulite['testo']
         d_dict['lista_opzioni'] = parti_pulite['opzioni']
         test_completo.append(d_dict)
-    return render_template('simulazione.html', domande=test_completo)
+    return render_template('simulazione.html', domande=test_completo, tipo_simulazione='classica')
 
 @app.route('/simulazione_personalizzata')
 @login_required
@@ -215,19 +215,27 @@ def simulazione_personalizzata():
         d_dict['lista_opzioni'] = parti_pulite['opzioni']
         test_completo.append(d_dict)
 
-    return render_template('simulazione.html', domande=test_completo, minuti_timer=minuti, totale_domande=num_domande)
+    return render_template('simulazione.html', domande=test_completo, minuti_timer=minuti, totale_domande=num_domande, tipo_simulazione='personalizzata')
 
 @app.route('/salva_simulazione', methods=['POST'])
 @login_required
 def salva_simulazione():
     try:
-        # get_json(silent=True) evita il crash se il file non è JSON
         dati = request.get_json(silent=True)
         
         if dati:
+            # Caso A: Invio tramite Javascript JSON
             risposte_utente = dati.get('risposte', {})
+            tipo_simulazione = dati.get('tipo_simulazione', 'classica')
         else:
-            risposte_utente = request.form.to_dict()
+            # Caso B: Invio tramite form classico
+            form_data = request.form.to_dict()
+            # Estraiamo il tipo di simulazione ed evitiamo che venga letto come ID domanda
+            tipo_simulazione = form_data.pop('tipo_simulazione', 'classica')
+            risposte_utente = form_data
+
+        # --- IMPOSTAZIONE DELLA PENALITÀ CORRETTA ---
+        penalita_errore = 0.0 if tipo_simulazione == 'personalizzata' else -0.1
 
         conn = get_db_connection()
         cur = get_cursor(conn)
@@ -236,19 +244,33 @@ def salva_simulazione():
         dettagli_da_salvare = []; dettagli_frontend = []
 
         for id_dom_str, risposta_data in risposte_utente.items():
+            # Salta eventuali chiavi spurie che non sono ID numerici
+            if not id_dom_str.isdigit(): continue
+            
             id_dom = int(id_dom_str)
             cur.execute('SELECT testo, risposta_corretta FROM domande WHERE id = %s', (id_dom,))
             domanda = cur.fetchone()
             if not domanda: continue
             risposta_esatta = domanda['risposta_corretta']
             testo_domanda = pulisci_domanda(domanda['testo'])['testo']
-            esito = 'non_data'
+            allowed_answers = ['A', 'B', 'C', 'D', 'E']
+            
+            # Normalizziamo la risposta eliminando spazi bianchi
+            if risposta_data:
+                risposta_data = str(risposta_data).strip().upper()
+                if risposta_data not in allowed_answers:
+                    risposta_data = None
 
+            esito = 'non_data'
             if risposta_data:
                 if risposta_data == risposta_esatta:
-                    esito = 'corretta'; punteggio += 1.0; corrette += 1
+                    esito = 'corretta'
+                    punteggio += 1.0
+                    corrette += 1
                 else:
-                    esito = 'errata'; punteggio -= 0.1; errate += 1
+                    esito = 'errata'
+                    punteggio += penalita_errore  # Applica 0.0 o -0.1 a seconda della modalità
+                    errate += 1
             else:
                 non_date += 1
 
@@ -261,9 +283,6 @@ def salva_simulazione():
                 "esito": esito
             })
 
-        # --- LE DUE CORREZIONI CHIAVE SONO QUI ---
-        # 1. round(punteggio, 2) evita i crash sui numeri decimali infiniti
-        # 2. data_test e CURRENT_TIMESTAMP salvano la data esatta e impediscono il valore NULL
         cur.execute(
             '''INSERT INTO simulazioni 
                (punteggio_totale, corrette, errate, non_date, id_utente, data_test) 

@@ -370,7 +370,10 @@
         try {
             let response = await fetch('/salva_simulazione', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ risposte: payloadRisposte })
+                body: JSON.stringify({ 
+                    risposte: payloadRisposte,
+                    tipo_simulazione: "{{ tipo_simulazione }}" // <-- NUOVA RIGA INSERITA
+                })
             });
             
             if (!response.ok) {
