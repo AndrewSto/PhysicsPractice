@@ -206,7 +206,9 @@
             </div>
             <div>
                 <div class="fs-2 text-danger fw-bold" id="res-errate">0</div>
-                <div class="text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">Errate (-0.1)</div>
+                <div class="text-muted fw-bold text-uppercase" style="font-size: 0.8rem;">
+                    Errate ({% if tipo_simulazione == 'personalizzata' %}0{% else %}-0.1{% endif %})
+                </div>
             </div>
             <div>
                 <div class="fs-2 text-secondary fw-bold" id="res-nondate">0</div>
@@ -400,13 +402,16 @@
                 let num = mappaDomande[d.id_domanda];
                 let icona = '', coloreClass = '', puntiTxt = '';
 
+                // --- DEFINISCI LA PENALITÀ VISIVA ---
+                let testoPenalita = "{{ tipo_simulazione }}" === "personalizzata" ? "0" : "-0.1";
+
                 if (d.esito === 'corretta') {
                     icona = '✅'; coloreClass = 'list-group-item-success'; puntiTxt = '+1';
                 } else {
                     let testoPulito = pulisciTestoPerAI(d.testo_domanda);
                     
                     if (d.esito === 'errata') {
-                        icona = '❌'; coloreClass = 'list-group-item-danger'; puntiTxt = '-0.1';
+                        icona = '❌'; coloreClass = 'list-group-item-danger'; puntiTxt = testoPenalita;
                         testoPerTutorAI += `--- ERRORE ${contatoreErrori} (Era la Domanda ${num} della simulazione) ---\nTESTO:\n${testoPulito}\n\nLA MIA RISPOSTA: ${d.risposta_data}\nRISPOSTA CORRETTA: ${d.risposta_esatta}\n\n`;
                     } else {
                         icona = '⚪'; coloreClass = 'list-group-item-secondary'; puntiTxt = '0';

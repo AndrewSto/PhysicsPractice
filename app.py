@@ -335,6 +335,13 @@ def resoconto(id_simulazione):
     if not sim:
         conn.close()
         return "Simulazione non trovata o accesso negato", 404
+    
+    # --- CORREZIONE DATE PER POSTGRESQL ---
+    # Convertiamo l'oggetto datetime in testo prima di passarlo al file HTML
+    sim_dict = dict(sim)
+    sim_dict['data_test'] = str(sim_dict['data_test'])
+    # --------------------------------------
+
     cur.execute('''
         SELECT ds.*, d.testo, d.risposta_corretta, d.capitolo
         FROM dettagli_simulazione ds
@@ -351,7 +358,9 @@ def resoconto(id_simulazione):
         d_dict['testo_pulito'] = parti_pulite['testo']
         d_dict['lista_opzioni'] = parti_pulite['opzioni']
         dettagli_puliti.append(d_dict)
-    return render_template('resoconto.html', simulazione=sim, dettagli=dettagli_puliti)
+        
+    # Passiamo 'sim_dict' (con la data corretta in formato testo) invece del vecchio 'sim'
+    return render_template('resoconto.html', simulazione=sim_dict, dettagli=dettagli_puliti)
 
 @app.route('/quiz')
 @login_required
